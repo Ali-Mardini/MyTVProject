@@ -20,7 +20,8 @@
     "android": {
       "splash": {
         "image": "./assets/images/icon-1920x720.png"
-      }
+      },
+      "package": "com.aliorbit.MyTVProject"
     },
     "ios": {
       "splash": {
