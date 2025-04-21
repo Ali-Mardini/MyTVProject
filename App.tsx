@@ -5,7 +5,7 @@ import {
   SpatialNavigationRoot,
   SpatialNavigationNode,
   SpatialNavigationScrollView,
-} from "react-tv-spatial-navigator";
+} from "./lib/src/index";
 
 export default function App() {
   return (
