@@ -6,8 +6,10 @@ import {
   SpatialNavigationNode,
   SpatialNavigationScrollView,
 } from "./lib/src/index";
+import { useNodeFocus } from "./lib/src/useNodeFocus";
 
 export default function App() {
+
   return (
     <SpatialNavigationRoot style={styles.container}>
       <TVDemo />
@@ -16,6 +18,8 @@ export default function App() {
 }
 
 function TVDemo() {
+  const focusNode = useNodeFocus();
+  // usage focusNode('boxA')
   return (
     <View style={styles.inner}>
       {/* Two focusable boxes */}
