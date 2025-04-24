@@ -1,11 +1,16 @@
-import React, {useContext, useEffect, useRef, useState} from "react";
-import {View, ViewProps, StyleProp, ViewStyle, Platform} from "react-native";
-import {SpatialContext} from "./SpatialNavigationRoot";
+// SpatialNavigationNode.tsx
+import React, { useContext, useEffect, useRef } from 'react';
+import {
+  View,
+  ViewProps,
+  StyleProp,
+  ViewStyle,
+  Platform,
+} from 'react-native';
+import { SpatialContext } from './SpatialNavigationRoot';
 
 export interface NodeProps extends ViewProps {
-  /** Unique ID for this node */
   nodeId: string;
-  /** Extra style to apply when focused */
   focusStyle?: StyleProp<ViewStyle>;
 }
 
@@ -18,14 +23,18 @@ export const SpatialNavigationNode: React.FC<NodeProps> = ({
 }) => {
   const ref = useRef<View>(null);
   const ctx = useContext(SpatialContext);
-  const [isFocused, setIsFocused] = useState(false);
+  if (!ctx) throw new Error('Missing SpatialContext.Provider');
 
+  // only run on mount/unmount
+  const { registerNode, unregisterNode, focusNode, focusedNode } = ctx;
   useEffect(() => {
-    ctx?.registerNode(nodeId, ref);
-    return () => ctx?.unregisterNode(nodeId);
-  }, [nodeId]);
+    registerNode(nodeId, ref);
+    return () => unregisterNode(nodeId);
+  }, [nodeId, registerNode, unregisterNode]);
 
-  // Non‑TV: just render a plain View
+  const isFocused = focusedNode === nodeId;
+
+  // non-TV fallback
   if (!Platform.isTV) {
     return (
       <View ref={ref} style={style} {...props}>
@@ -34,24 +43,23 @@ export const SpatialNavigationNode: React.FC<NodeProps> = ({
     );
   }
 
-  // TV: make it focusable and apply visuals on focus
+  // TV view
   return (
     <View
       ref={ref}
-      focusable={true}
+      focusable
       style={[
         style,
         isFocused && focusStyle,
         {
-          transform: [{scale: isFocused ? 1.05 : 1}],
-          shadowColor: "#000",
+          transform: [{ scale: isFocused ? 1.05 : 1 }],
+          shadowColor: '#000',
           shadowOpacity: isFocused ? 0.3 : 0,
           shadowRadius: isFocused ? 5 : 0,
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: { width: 0, height: 2 },
         },
       ]}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
+      onFocus={() => focusNode(nodeId)}
       {...props}
     >
       {children}

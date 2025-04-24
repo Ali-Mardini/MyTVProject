@@ -13,6 +13,7 @@ import { SpatialNavigationRoot as TVRoot } from './SpatialNavigationRoot';
 import { SpatialNavigationNode as TVNode } from './SpatialNavigationNode';
 import { SpatialNavigationScrollView as TVScroll } from './SpatialNavigationScrollView';
 import { useSpatialNavigator as useTVNavigator } from './useSpatialNavigator';
+import { useNodeFocus as useTVNodeFocus } from './useNodeFocus';
 
 export * from './types';
 
@@ -41,4 +42,12 @@ export function useSpatialNavigator() {
     unregisterNode: (_id: string) => {},
     focusNode: (_id: string) => {},
   };
+}
+
+export function useNodeFocus() {
+  if (isTV) {
+    return useTVNodeFocus();
+  }
+  // no‑op for non‑TV
+  return () => {};
 }

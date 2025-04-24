@@ -1,4 +1,11 @@
-import React, { createContext, useEffect, useState } from 'react';
+// SpatialNavigationRoot.tsx
+import React, {
+  createContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { View, ViewProps, Platform, useTVEventHandler } from 'react-native';
 
 export interface RootContextProps {
@@ -17,68 +24,77 @@ export const SpatialNavigationRoot: React.FC<SpatialNavigationRootProps> = ({
   style,
   ...props
 }) => {
-  const [nodes, setNodes] = useState<Map<string, React.RefObject<any>>>(new Map());
+  const [nodes, setNodes] = useState(new Map<string, React.RefObject<any>>());
   const [focusedNode, setFocusedNode] = useState<string | null>(null);
 
-  const registerNode = (id: string, ref: React.RefObject<any>) => {
-    setNodes((prev) => new Map(prev).set(id, ref));
-  };
-
-  const unregisterNode = (id: string) => {
-    setNodes((prev) => {
-      const copy = new Map(prev);
-      copy.delete(id);
-      return copy;
+  // stable register/unregister
+  const registerNode = useCallback((id: string, ref: React.RefObject<any>) => {
+    setNodes(prev => {
+      const next = new Map(prev);
+      next.set(id, ref);
+      return next;
     });
-  };
+  }, []);
 
-  const focusNode = (id: string) => {
+  const unregisterNode = useCallback((id: string) => {
+    setNodes(prev => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  // stable focusNode
+  const focusNode = useCallback((id: string) => {
     const ref = nodes.get(id);
     if (ref?.current && typeof ref.current.focus === 'function') {
       ref.current.focus();
       setFocusedNode(id);
+      console.log('🔵 focusedNode is now:', id);
     }
-  };
+  }, [nodes]);
 
-  // Handle left/right (or up/down) to move focus in registration order
-  const handleTVEvent = (event: { eventType?: string }) => {
-      if (!Platform.isTV || !event.eventType || !focusedNode) return;
+  // handle remote nav
+  const handleTVEvent = useCallback(
+    (evt: { eventType?: string }) => {
+      if (!Platform.isTV || !evt.eventType || !focusedNode) return;
       const ids = Array.from(nodes.keys());
       const idx = ids.indexOf(focusedNode);
-      let nextIndex = idx;
-  
-      switch (event.eventType) {
+      let next = idx;
+      switch (evt.eventType) {
         case 'right':
         case 'down':
-          nextIndex = (idx + 1) % ids.length;
+          next = (idx + 1) % ids.length;
           break;
         case 'left':
         case 'up':
-          nextIndex = (idx - 1 + ids.length) % ids.length;
+          next = (idx - 1 + ids.length) % ids.length;
           break;
         default:
           return;
       }
-      focusNode(ids[nextIndex]);
-    };
-
-  // Wire up the TV remote events
+      focusNode(ids[next]);
+    },
+    [nodes, focusedNode, focusNode]
+  );
   useTVEventHandler(handleTVEvent);
 
-  // Optionally auto-focus the first node when it appears
+  // auto-focus first node once
   useEffect(() => {
     if (!focusedNode && nodes.size > 0) {
-      const firstNode = nodes.keys().next().value;
-      if (firstNode) {
-        focusNode(firstNode);
-      }
+      const first = nodes.keys().next().value;
+      focusNode(first);
     }
-  }, [nodes]);
+  }, [nodes, focusedNode, focusNode]);
+
+  // memoize context so children only re-render on actual value changes
+  const contextValue = useMemo(
+    () => ({ registerNode, unregisterNode, focusNode, focusedNode }),
+    [registerNode, unregisterNode, focusNode, focusedNode]
+  );
 
   return (
-    <SpatialContext.Provider
-      value={{ registerNode, unregisterNode, focusNode, focusedNode }}
-    >
+    <SpatialContext.Provider value={contextValue}>
       <View style={style} {...props}>
         {children}
       </View>

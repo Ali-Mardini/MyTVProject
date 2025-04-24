@@ -1,12 +1,12 @@
 // App.tsx
 import React from "react";
-import {StyleSheet, Text, View} from "react-native";
+import {Button, StyleSheet, Text, View} from "react-native";
 import {
   SpatialNavigationRoot,
   SpatialNavigationNode,
   SpatialNavigationScrollView,
+  useNodeFocus
 } from "./lib/src/index";
-import { useNodeFocus } from "./lib/src/useNodeFocus";
 
 export default function App() {
 
@@ -18,8 +18,8 @@ export default function App() {
 }
 
 function TVDemo() {
-  const focusNode = useNodeFocus();
-  // usage focusNode('boxA')
+  const focusNode = useNodeFocus();     // ← now you have the focusNode function
+
   return (
     <View style={styles.inner}>
       {/* Two focusable boxes */}
@@ -39,6 +39,11 @@ function TVDemo() {
         >
           <Text style={styles.boxText}>B</Text>
         </SpatialNavigationNode>
+
+        <Button
+          title='Click me'
+          onPress={() => focusNode("item-2")}
+          />
       </View>
 
       {/* Horizontal paging list—each item is now focusable */}
